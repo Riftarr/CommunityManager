@@ -13,7 +13,7 @@ namespace CommunityManager
         private static float _lastRefreshRealtime = -9999f;
 
         private const float DEFAULT_STUDENT_MULTIPLIER = 10f;
-        private const float DEFAULT_TUITION_MULTIPLIER = 0.15f;
+        private const float DEFAULT_TUITION_MULTIPLIER = 1.25f;
 
         private const float DEFAULT_STUDENT_VICTORY_ADJUSTED = 1f;
 

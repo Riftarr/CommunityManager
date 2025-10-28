@@ -10,6 +10,8 @@ namespace CommunityManager
         [HarmonyPostfix]
         public static bool Prefix(RecruitStudentChallenge.Info __instance)
         {
+            if (ManagerConfig.StudentVictoryAdjusted == 0f) return true;
+
             ManagerConfig.StudentAddedCount++;
             //FileLog.Log("StudentAddedCount: " + ManagerConfig.StudentAddedCount);
 
