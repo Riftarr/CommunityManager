@@ -1,10 +1,19 @@
-﻿using ModFrameworkNs.Publish;
+﻿// File: boot.cs
+// Purpose: Universal, minimal boot shim any mod can ship.
+//  • Announces itself to EduWorks.Core.CommandCenter (by reflection).
+//  • Core handles waking mods up after Harmony is loaded.
+//  • Reports failures back to Core.
+//
+// • You do NOT need to include a 'BootableModFunctionBase' elsewhere in your mod. boot.cs includes it already
+
 using System;
 using System.Reflection;
 using UnityEngine;
+using ModFrameworkNs.Publish;
 
 namespace BootSupport
 {
+    // ========== CONFIG START ==========
     internal static class BootConfig
     {
         public const string ModName = "Community Manager";
@@ -21,71 +30,71 @@ namespace BootSupport
 
         public const string CleanupEntry = null;
     }
-
     // ========== CONFIG END ==========
 
+// ========== Do not modify anything below this point ==========
+    internal sealed class BootPoller : MonoBehaviour
+    {
+        private Action _tick;
+        public void Init(Action tick) { _tick = tick; }
 
-    // ========== Do not modify anything below this point ==========
-
-
+        private void Update()
+        {
+            try { _tick?.Invoke(); }
+            catch { }
+        }
+    }
 
     public sealed class BootShim : BootableModFunctionBase
     {
-        // Anti double-announce noise (same-session only):
         private static bool s_announced;
         private static string s_token;
-
-        // IMPORTANT: set when Core puts us to sleep or we disable ourselves;
-        // forces a re-announce on next enable so Core can poke us again.
         private static volatile bool s_needReannounce;
 
+        // IMPORTANT: Core may request Sleep vs Off. Carry that into NotifyOffline().
+        private static volatile bool s_nextDisableIsPermanent = true;
+
         private string _token;
-        private Action _lateTry; // AssemblyLoad rebound until we find Core
+        private volatile bool _isDisabled;
+
+        private GameObject _pollGo;
+        private BootPoller _poller;
 
         private string _modId = BootConfig.ModId;
         private string _modName = BootConfig.ModName;
 
-        // Ignore late signals while disabled
-        private volatile bool _isDisabled;
         protected override void OnInit() { }
 
         protected override void OnEnable()
         {
-            try
+            _isDisabled = false;
+
+            // If we were put to sleep/off earlier, re-announce so Core re-pokes us.
+            if (s_needReannounce)
             {
-                _isDisabled = false;
-
-                // If we were put to sleep/off earlier, re-announce so Core re-pokes us.
-                if (s_needReannounce)
-                {
-                    TryAnnounceOrDefer();
-                    s_needReannounce = false;
-                    return;
-                }
-
-                // First boot fast-path: avoid redundant Announce within the same session.
-                if (s_announced && !string.IsNullOrEmpty(s_token))
-                {
-                    _token = s_token;
-                    return;
-                }
-
-                // Normal first-time path.
-                TryAnnounceOrDefer();
+                StartPollingForCore();
+                s_needReannounce = false;
+                return;
             }
-            catch (Exception ex)
+
+            // Fast path: already announced this session.
+            if (s_announced && !string.IsNullOrEmpty(s_token))
             {
-                Debug.LogError("[" + (_modName ?? "Mod") + "]: boot.cs OnEnable failed: " + ex);
+                _token = s_token;
+                return;
             }
+
+            StartPollingForCore();
         }
+
         protected override void OnDisable()
         {
             try
             {
                 _isDisabled = true;
-
-                // Mark that next enable should re-announce.
                 s_needReannounce = true;
+
+                StopPolling();
 
                 var cc = ResolveCommandCenter();
                 var tok = !string.IsNullOrEmpty(_token) ? _token : s_token;
@@ -93,22 +102,54 @@ namespace BootSupport
                 if (cc != null && !string.IsNullOrEmpty(tok))
                 {
                     var mi = cc.GetMethod("NotifyOffline", BindingFlags.Public | BindingFlags.Static);
-                    // Only sticky-disable from explicit user action (e.g., Mod UI). Generic disable => Sleep.
-                    mi?.Invoke(null, new object[] { tok, false /* temporarily off (sleep) */ });
+
+                    // Use Core’s last requested mode if available.
+                    bool permanentlyOff = s_nextDisableIsPermanent;
+                    mi?.Invoke(null, new object[] { tok, permanentlyOff });
+
+                    // reset to default for manual disables, etc.
+                    s_nextDisableIsPermanent = true;
                 }
             }
             catch (Exception ex)
             {
                 Debug.LogError("[" + (_modName ?? "Mod") + "]: boot.cs OnDisable failed: " + ex);
             }
-            finally
-            {
-                try { AppDomain.CurrentDomain.AssemblyLoad -= OnAsmLoad; } catch { }
-                _lateTry = null;
-            }
         }
 
-        // ── signal handler from Core ──
+        private void StartPollingForCore()
+        {
+            if (_pollGo != null) return;
+
+            _pollGo = new GameObject("[BootShim.Poller] " + (_modId ?? "mod"));
+            UnityEngine.Object.DontDestroyOnLoad(_pollGo);
+            _poller = _pollGo.AddComponent<BootPoller>();
+            _poller.Init(TickTryAnnounce);
+        }
+
+        private void StopPolling()
+        {
+            try
+            {
+                if (_pollGo != null) UnityEngine.Object.Destroy(_pollGo);
+            }
+            catch { }
+            _pollGo = null;
+            _poller = null;
+        }
+
+        private void TickTryAnnounce()
+        {
+            if (_isDisabled) { StopPolling(); return; }
+
+            var cc = ResolveCommandCenter();
+            if (cc == null) return;
+
+            StopPolling();
+            Announce(cc);
+        }
+
+        // signal handler from Core
         private void OnSignal(string code, string message)
         {
             if (_isDisabled) return;
@@ -119,7 +160,6 @@ namespace BootSupport
                 switch (c)
                 {
                     case "token":
-                        // Core hands our token here (before "go"). Cache it for AckReady/ReportError.
                         if (string.IsNullOrEmpty(_token) && !string.IsNullOrEmpty(message))
                         {
                             _token = message;
@@ -127,11 +167,11 @@ namespace BootSupport
                             s_announced = true;
                         }
                         return;
+
                     case "go":
                         Debug.Log("[" + (_modName ?? "Mod") + "]: Poked by Core. Waking up!");
                         if (BootConfig.HarmonyOnly)
                         {
-                            // Core already patched Harmony. Simply acknowledge success.
                             AckReady(true);
                         }
                         else
@@ -142,30 +182,31 @@ namespace BootSupport
                             }
                             else
                             {
-                                // Tell Core the reason for summary output, and go back to sleep.
                                 ReportErrorToCore(err ?? "Boot failed.");
-                                Debug.Log("[" + (_modName ?? "Mod") + "]: Poked by Core, but my boot failed (" + (err ?? "Unknown") + "). Sleeping...");
+                                Debug.Log("[" + (_modName ?? "Mod") + "]: Boot failed (" + (err ?? "Unknown") + ").");
                                 AckReady(false);
                             }
                         }
                         return;
-                    case "wait":
-                        // Quiet
-                        return;
+
                     case "sleep":
-                        // Core put us to sleep (e.g., dependency went offline). Re-announce on next enable.
+                        // Tell OnDisable() this is not permanent
+                        s_nextDisableIsPermanent = false;
                         s_needReannounce = true;
                         return;
+
                     case "off":
-                        // Fully off; also re-announce on next enable.
+                        // Permanent off
+                        s_nextDisableIsPermanent = true;
                         s_needReannounce = true;
                         return;
+
                     case "error":
                         Debug.LogError("[" + (_modName ?? "Mod") + "]: Core error: " + message);
                         return;
                 }
             }
-            catch { /* Never throw into Core. It does not appreciate it */ }
+            catch { }
         }
 
         private void AckReady(bool ok)
@@ -176,30 +217,29 @@ namespace BootSupport
                 Debug.LogError("[" + (_modName ?? "Mod") + "]: AckReady: Core not found"); // Something has gone terribly wrong if we hit this lmao
                 return;
             }
-
-            if (string.IsNullOrEmpty(_token))
+            var tok = _token;
+            if (string.IsNullOrEmpty(tok))
                 Debug.LogError("[" + (_modName ?? "Mod") + "]: AckReady: _token is NULL/empty!");
 
             var mi = cc.GetMethod("AckReady", BindingFlags.Public | BindingFlags.Static);
-            mi?.Invoke(null, new object[] { _token, ok });
+            mi?.Invoke(null, new object[] { tok, ok });
         }
 
         private void ReportErrorToCore(string msg)
         {
             var cc = ResolveCommandCenter();
             if (cc == null) return;
+
             var mi = cc.GetMethod("ReportError", BindingFlags.Public | BindingFlags.Static);
             mi?.Invoke(null, new object[] { _token, msg ?? "Unknown error." });
         }
+
         private bool RunBoot(out string error)
         {
             error = null;
 
             if (string.IsNullOrWhiteSpace(BootConfig.Boot))
-            {
-                // No boot entry. We'll treat this as if it were a success.
                 return true;
-            }
 
             try
             {
@@ -218,29 +258,6 @@ namespace BootSupport
                 error = ex.Message;
                 return false;
             }
-        }
-
-        // ── announce to Core (or defer until Core loads) ──
-        private void TryAnnounceOrDefer()
-        {
-            var cc = ResolveCommandCenter();
-            if (cc != null) { Announce(cc); return; }
-
-            _lateTry = () =>
-            {
-                var cc2 = ResolveCommandCenter();
-                if (cc2 == null) return;
-                Announce(cc2);
-                try { AppDomain.CurrentDomain.AssemblyLoad -= OnAsmLoad; } catch { }
-                _lateTry = null;
-            };
-
-            AppDomain.CurrentDomain.AssemblyLoad += OnAsmLoad;
-        }
-
-        private void OnAsmLoad(object _, AssemblyLoadEventArgs __)
-        {
-            try { if (_lateTry != null) _lateTry(); } catch { /* never throw */ }
         }
 
         private void Announce(Type commandCenter)
@@ -265,7 +282,7 @@ namespace BootSupport
                 {
                     _modId,
                     _modName,
-                    null,                        // harmonyId -> default to modId in Core
+                    null, // harmonyId -> default to modId in Core
                     BootConfig.Boot ?? null,
                     BootConfig.CleanupEntry ?? null,
                     BootConfig.HarmonyOnly,
@@ -277,6 +294,7 @@ namespace BootSupport
                 _token = tokenObj as string ?? tokenObj?.ToString();
                 s_token = _token;
                 s_announced = !string.IsNullOrEmpty(_token);
+
                 if (string.IsNullOrEmpty(_token))
                     Debug.LogError("[" + (_modName ?? "Mod") + "]: Announce returned no token!");
             }
@@ -300,14 +318,13 @@ namespace BootSupport
             var t = ResolveTypeLoose(typeName);
             if (t == null) return null;
 
-            var mi = t.GetMethod(method, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-            return mi;
+            return t.GetMethod(method, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
         }
 
-        // Allows resolution by "Namespace.Type, Assembly" OR by scanning all loaded assemblies.
         private static Type ResolveTypeLoose(string qname)
         {
             if (string.IsNullOrWhiteSpace(qname)) return null;
+
             var t = Type.GetType(qname, false);
             if (t != null) return t;
 
@@ -319,31 +336,15 @@ namespace BootSupport
             {
                 try
                 {
-
 #if NETFRAMEWORK || NETSTANDARD2_0
-
-                    var isDyn = false;
+                    bool isDyn = false;
                     try { isDyn = asm.IsDynamic; } catch { isDyn = false; }
                     if (isDyn) continue;
-
 #endif
-
                     t = asm.GetType(simple, false);
                     if (t != null) return t;
                 }
                 catch { }
-            }
-
-            // last resort: scan names
-            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                Type[] types;
-                try { types = asm.GetTypes(); } catch { continue; }
-                for (int i = 0; i < types.Length; i++)
-                {
-                    var tt = types[i];
-                    if (tt.FullName == qname || tt.Name == qname) return tt;
-                }
             }
             return null;
         }

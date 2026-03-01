@@ -37,6 +37,10 @@
     <Reference Include="Assembly-CSharp">
       <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Let's School\LetsSchool_Data\Managed\Assembly-CSharp.dll</HintPath>
     </Reference>
+    <Reference Include="Assembly-CSharp-firstpass, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Let's School\LetsSchool_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
+    </Reference>
     <Reference Include="Framework, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Let's School\LetsSchool_Data\Managed\Framework.dll</HintPath>
@@ -44,7 +48,30 @@
     <Reference Include="ModFramework.Publish">
       <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Let's School\LetsSchool_Data\Managed\ModFramework.Publish.dll</HintPath>
     </Reference>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Let's School\LetsSchool_Data\Managed\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="Sirenix.OdinInspector.Attributes, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Let's School\LetsSchool_Data\Managed\Sirenix.OdinInspector.Attributes.dll</HintPath>
+    </Reference>
+    <Reference Include="Sirenix.Serialization, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Let's School\LetsSchool_Data\Managed\Sirenix.Serialization.dll</HintPath>
+    </Reference>
+    <Reference Include="Sirenix.Serialization.AOTGenerated">
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Let's School\LetsSchool_Data\Managed\Sirenix.Serialization.AOTGenerated.dll</HintPath>
+    </Reference>
+    <Reference Include="Sirenix.Serialization.Config, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Let's School\LetsSchool_Data\Managed\Sirenix.Serialization.Config.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
+    <Reference Include="Unity.TextMeshPro, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Let's School\LetsSchool_Data\Managed\Unity.TextMeshPro.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine">
       <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Let's School\LetsSchool_Data\Managed\UnityEngine.dll</HintPath>
     </Reference>
@@ -54,15 +81,49 @@
     <Reference Include="UnityEngine.JSONSerializeModule">
       <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Let's School\LetsSchool_Data\Managed\UnityEngine.JSONSerializeModule.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.UI, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Let's School\LetsSchool_Data\Managed\UnityEngine.UI.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UIElementsModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Let's School\LetsSchool_Data\Managed\UnityEngine.UIElementsModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UIElementsNativeModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Let's School\LetsSchool_Data\Managed\UnityEngine.UIElementsNativeModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UIModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Let's School\LetsSchool_Data\Managed\UnityEngine.UIModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UIWidgetsModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Let's School\LetsSchool_Data\Managed\UnityEngine.UIWidgetsModule.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BootSupport\Boot.cs" />
-    <Compile Include="CommunityManager\Patch_Tuition_dailyFeeSet.cs" />
-    <Compile Include="CommunityManager\Patch_Students_Init.cs" />
-    <Compile Include="CommunityManager\ManagerConfig.cs" />
-    <Compile Include="CommunityManager\ModUiDeclaration.cs" />
-    <Compile Include="CommunityManager\Patch_Victory_ChallengeModule.cs" />
-    <Compile Include="CommunityManager\Patch_Victory_StudentCountTask.cs" />
+    <Compile Include="CommunityManager\Investment\StudentSourceInvestItem_Housing.cs" />
+    <Compile Include="CommunityManager\Investment\StudentSourceInvestItem_Morality.cs" />
+    <Compile Include="CommunityManager\Investment\MajorModifyer\Postfix_TargetMajorSelectPanel_GenMajorSelection.cs" />
+    <Compile Include="CommunityManager\Investment\MajorModifyer\Postfix_MajorModifyer_GetDontateInfo.cs" />
+    <Compile Include="CommunityManager\Investment\MajorModifyer\Postfix_MajorModifyer_OnGetTips.cs" />
+    <Compile Include="CommunityManager\Investment\MajorModifyer\Prefix_StudentSourceDevelopPanel_OnPop.cs" />
+    <Compile Include="CommunityManager\Investment\MajorModifyer\Postfix_MajorModifyer_GetCost.cs" />
+    <Compile Include="CommunityManager\Investment\Prefix_StudentSourceDevelopPanel_SetData.cs" />
+    <Compile Include="CommunityManager\Investment\StudentSourceInvestItem_Festival.cs" />
+    <Compile Include="CommunityManager\Total Students\Prefix_OutsideStudentSource_SetPanelData.cs" />
+    <Compile Include="CommunityManager\Total Students\Postfix_StudentSourceInstance_nextStudentCount.cs" />
+    <Compile Include="CommunityManager\Total Students\Postfix_StudentSourceInstance_playerTotalStudentCount.cs" />
+    <Compile Include="CommunityManager\Total Students\Prefix_StudentSourceSubscribePanel_SetData.cs" />
+    <Compile Include="CommunityManager\Tuition\Prefix_StudentSourceInstance_dailyFee.cs" />
+    <Compile Include="CommunityManager\Total Students\Prefix_BigMapStudentSource_SetPanelData.cs" />
+    <Compile Include="CommunityManager\ModUI\ManagerConfig.cs" />
+    <Compile Include="CommunityManager\ModUI\ModUiDeclaration.cs" />
+    <Compile Include="CommunityManager\Victory Adjustments\Patch_StudentCountTask_targetValue.cs" />
+    <Compile Include="CommunityManager\Victory Adjustments\Prefix_RecruitStudentChallenge_OnStudentAdded.cs" />
+    <Compile Include="CommunityManager\Victory Adjustments\Patch_StudentCountTask_GetText.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
